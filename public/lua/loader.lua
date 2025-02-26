@@ -7,24 +7,25 @@ local coreGui = game:GetService("CoreGui")
 local player = players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- Base URL for direct file access
-local BASE_URL = "https://dracula.lol/lua"
+-- Base URL for API access
+local BASE_URL = "https://dracula.lol/api/lua"
 
 -- Load other modules
 local function loadModule(name)
     if not name then return nil end
     
     local success, content = pcall(function()
-        local response = game:HttpGet(BASE_URL .. "/" .. name .. ".lua")
-        -- Validate content
-        if response:match("^%s*<!DOCTYPE") or response:match("^%s*<html") then
-            error("Received HTML instead of Lua code")
-        end
-        return response
+        return game:HttpGet(BASE_URL .. "/" .. name .. ".lua")
     end)
     
     if not success then
         warn("Failed to fetch module " .. name .. ": " .. tostring(content))
+        return nil
+    end
+    
+    -- Check if content is HTML (error page)
+    if content:match("<!DOCTYPE") or content:match("<html") then
+        warn("Received HTML instead of Lua for module: " .. name)
         return nil
     end
     
@@ -36,7 +37,7 @@ local function loadModule(name)
     end
     
     -- Try to execute the code
-    success, result = pcall(fn)
+    local success, result = pcall(fn)
     if not success then
         warn("Failed to execute module " .. name .. ": " .. tostring(result))
         return nil
