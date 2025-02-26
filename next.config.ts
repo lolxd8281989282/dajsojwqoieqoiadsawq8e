@@ -21,11 +21,18 @@ const nextConfig = {
             key: "Expires",
             value: "0",
           },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Robots-Tag",
+            value: "noindex, nofollow",
+          },
         ],
       },
     ]
   },
-  // You can keep your existing config options here
 }
 
 export default nextConfig
