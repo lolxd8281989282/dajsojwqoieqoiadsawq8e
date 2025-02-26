@@ -39,21 +39,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get the absolute path to the lua file
     const filePath = path.join(process.cwd(), "public", "lua", cleanFile)
 
-    try {
-      // Read the file content
-      const content = await fs.readFile(filePath, "utf8")
+    // Read and send the file content
+    const content = await fs.readFile(filePath, "utf8")
 
-      // Set additional headers to prevent caching
-      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
-      res.setHeader("Pragma", "no-cache")
-      res.setHeader("Expires", "0")
+    // Set additional headers to prevent caching
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+    res.setHeader("Pragma", "no-cache")
+    res.setHeader("Expires", "0")
 
-      // Send the raw content
-      res.send(content)
-    } catch (error) {
-      res.status(404).send("File not found")
-    }
-  } catch (error) {
-    res.status(500).send("Internal server error")
+    // Send the raw content
+    res.send(content)
+  } catch {
+    // Simplified error handling without unused variables
+    res.status(404).send("File not found")
   }
 }
