@@ -354,8 +354,6 @@ function GUI.Create(Config, ESP, Aimbot)
             optionButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
             optionButton.TextColor3 = Color3.fromRGB(200, 200, 200)
             optionButton.TextSize = 12
-            optionButton.Font = Enum.Font.Gotham200,200)
-            optionButton.TextSize = 12
             optionButton.Font = Enum.Font.Gotham
             optionButton.TextXAlignment = Enum.TextXAlignment.Left
             optionButton.BorderSizePixel = 0
