@@ -3,7 +3,8 @@ const nextConfig = {
   headers: async () => {
     return [
       {
-        source: "/api/lua/:file*",
+        // Serve Lua files directly from public directory
+        source: "/lua/:file*",
         headers: [
           {
             key: "Content-Type",
@@ -24,10 +25,6 @@ const nextConfig = {
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
-          },
-          {
-            key: "X-Robots-Tag",
-            value: "noindex, nofollow",
           },
         ],
       },
