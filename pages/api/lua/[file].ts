@@ -1,46 +1,66 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import fs from 'fs'
-import path from 'path'
-import rateLimit from 'express-rate-limit'
+import type { NextApiRequest, NextApiResponse } from "next"
+import rateLimit from "express-rate-limit"
+import { createRouter } from "next-connect"
+import { promises as fs } from "fs"
+import path from "path"
 
+// Configure rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
 })
 
-const API_KEY = process.env.API_KEY // Set this in your environment variables
+const router = createRouter<NextApiRequest, NextApiResponse>()
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+// Apply rate limiting
+router.use(async (req, res, next) => {
+  await new Promise((resolve) => {
+    limiter(req, res, () => {
+      resolve(null)
+    })
+  })
+  await next()
+})
+
+// Handle GET requests
+router.get(async (req, res) => {
   try {
-    await limiter(req, res)
-  } catch {
-    res.status(429).json({ error: 'Too many requests' })
-    return
-  }
+    const { file } = req.query
 
-  // Basic auth check
-  const authHeader = req.headers.authorization
-  if (!authHeader || authHeader !== `Bearer ${API_KEY}`) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
+    // Validate file parameter
+    if (!file || Array.isArray(file)) {
+      return res.status(400).json({ error: "Invalid file parameter" })
+    }
 
-  const { file } = req.query
-  
-  if (typeof file !== 'string') {
-    res.status(400).json({ error: 'Invalid file name' })
-    return
-  }
+    // Ensure the file has a .lua extension
+    if (!file.endsWith(".lua")) {
+      return res.status(400).json({ error: "Only .lua files are allowed" })
+    }
 
-  const filePath = path.join(process.cwd(), 'public', 'lua', `${file}.lua`)
+    // Get the file path
+    const filePath = path.join(process.cwd(), "public", "lua", file)
 
-  try {
-    const fileContent = fs.readFileSync(filePath, 'utf8')
-    res.setHeader('Content-Type', 'text/plain')
-    res.setHeader('Cache-Control', 'public, max-age=3600')
-    console.log(`[${new Date().toISOString()}] Served ${file}.lua to ${req.headers['x-real-ip']}`)
-    res.status(200).send(fileContent)
+    // Read the file
+    const content = await fs.readFile(filePath, "utf8")
+
+    // Set proper content type
+    res.setHeader("Content-Type", "text/plain")
+    res.send(content)
   } catch (error) {
-    res.status(404).json({ error: 'File not found' })
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      res.status(404).json({ error: "File not found" })
+    } else {
+      res.status(500).json({ error: "Internal server error" })
+    }
   }
+})
+
+// Export the handler
+export default router.handler()
+
+// Disable body parsing, as we don't need it for serving Lua files
+export const config = {
+  api: {
+    bodyParser: false,
+  },
 }
