@@ -7,15 +7,18 @@ local coreGui = game:GetService("CoreGui")
 local player = players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- Base URL for direct file access
-local BASE_URL = "https://dracula.lol/lua"
+-- Base URL for GitHub raw content
+local BASE_URL = "https://raw.githubusercontent.com/lolxd8281989282/dajsojwqoieqoiadsawq8e/master/public/lua"
 
 -- Load other modules
 local function loadModule(name)
     if not name then return nil end
     
+    local url = BASE_URL .. "/" .. name .. ".lua"
+    print("Fetching module from:", url)
+    
     local success, content = pcall(function()
-        return game:HttpGet(BASE_URL .. "/" .. name .. ".lua.txt")
+        return game:HttpGet(url)
     end)
     
     if not success then
@@ -62,9 +65,18 @@ local GUI = loadModule("gui_creation")
 -- Initialize the system
 if Config and ESP and Aimbot and GUI then
     local success, error = pcall(function()
-        Config.Init()
+        -- Initialize Config (if needed)
+        if Config.Init then
+            Config.Init()
+        end
+
+        -- Initialize ESP
         ESP.Init(Config.ESP, workspace, players, runService, userInputService, player, camera)
+
+        -- Initialize Aimbot
         Aimbot.Init(Config.Aimbot, workspace, players, runService, userInputService, player, camera)
+
+        -- Create GUI
         GUI.Create(Config, ESP, Aimbot)
     end)
     
@@ -76,3 +88,73 @@ if Config and ESP and Aimbot and GUI then
 else
     warn("Failed to load one or more modules")
 end
+
+-- Setup Streamproof functionality
+local function setupStreamProof()
+    local function updateStreamProof()
+        for _, obj in pairs(game:GetDescendants()) do
+            if obj:IsA("Frame") and obj.Name:find("ESP") then
+                if Config.Misc.StreamProof then
+                    obj.ClipsDescendants = true
+                    obj.BackgroundTransparency = 1
+                    obj.Visible = false
+                    obj:SetAttribute("StreamProof", true)
+                else
+                    obj.ClipsDescendants = false
+                    obj.BackgroundTransparency = 0
+                    obj.Visible = true
+                    obj:SetAttribute("StreamProof", false)
+                end
+            end
+        end
+    end
+    
+    return updateStreamProof
+end
+
+local updateStreamProof = setupStreamProof()
+
+-- Main loop
+runService.RenderStepped:Connect(function()
+    if Config and Config.Misc then
+        -- Camera FOV
+        if Config.Misc.ThirdPerson and player.Character then
+            local humanoid = player.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.CameraOffset = Vector3.new(0, 0, Config.Misc.CameraAmount / 10)
+            end
+        end
+        
+        -- World settings
+        if Config.Misc.CustomFog then
+            game.Lighting.FogEnd = Config.Misc.FogDistance
+        end
+        
+        if Config.Misc.CustomBrightness then
+            game.Lighting.Brightness = Config.Misc.BrightnessStrength / 50
+        end
+        
+        -- Movement settings
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            
+            if Config.Misc.SpeedEnabled then
+                humanoid.WalkSpeed = 16 + (Config.Misc.SpeedAmount / 2)
+            else
+                humanoid.WalkSpeed = 16
+            end
+            
+            if Config.Misc.FlightEnabled then
+                local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    rootPart.Velocity = rootPart.Velocity + Vector3.new(0, Config.Misc.FlightAmount / 10, 0)
+                end
+            end
+        end
+
+        -- Update Streamproof
+        updateStreamProof()
+    end
+end)
+
+print("Loader execution completed")
