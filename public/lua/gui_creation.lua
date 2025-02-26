@@ -20,7 +20,7 @@ function GUI.Create(Config, ESP, Aimbot)
     if not Config.Misc then
         warn("Config.Misc is nil")
         return
-    end -- Fixed syntax error: removed } and replaced with end
+    end
     
     if not Config.CurrentPage then
         Config.CurrentPage = "visual"  -- Set default page
@@ -137,11 +137,9 @@ function GUI.Create(Config, ESP, Aimbot)
         page.BackgroundTransparency = 1
         page.Visible = false
         page.Parent = Container
-        print("Created page:", name)
     end
 
     pages.VisualsPage.Visible = Config.CurrentPage == "visual"
-    print("Set VisualsPage visibility to:", pages.VisualsPage.Visible)
 
     local function updateNavColors()
         for name, button in pairs(navButtons) do
@@ -166,14 +164,12 @@ function GUI.Create(Config, ESP, Aimbot)
         navButtons[name] = button
         
         button.MouseButton1Click:Connect(function()
-            print("Switching to page:", name)
             Config.CurrentPage = name
             updateNavColors()
             
             for pageName, page in pairs(pages) do
                 local shouldBeVisible = (pageName:lower():gsub("page", "") == name)
                 page.Visible = shouldBeVisible
-                print(pageName, "visibility set to", shouldBeVisible)
             end
         end)
     end
@@ -277,7 +273,7 @@ function GUI.Create(Config, ESP, Aimbot)
         indicator.Size = UDim2.new(0, 10, 0, 10)
         indicator.Position = UDim2.new(0.5, -5, 0.5, -5)
         indicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        indicator.BackgroundTransparency = 1
+        indicator.BackgroundTransparency = configTable[setting] and 0 or 1
         indicator.BorderSizePixel = 0
         indicator.Parent = button
 
@@ -296,15 +292,9 @@ function GUI.Create(Config, ESP, Aimbot)
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.Parent = toggleFrame
 
-        local function updateToggle()
-            indicator.BackgroundTransparency = configTable[setting] and 0 or 1
-        end
-
-        updateToggle()
         button.MouseButton1Click:Connect(function()
             configTable[setting] = not configTable[setting]
-            updateToggle()
-            print(name, "set to", configTable[setting])
+            indicator.BackgroundTransparency = configTable[setting] and 0 or 1
         end)
 
         return toggleFrame
@@ -364,6 +354,8 @@ function GUI.Create(Config, ESP, Aimbot)
             optionButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
             optionButton.TextColor3 = Color3.fromRGB(200, 200, 200)
             optionButton.TextSize = 12
+            optionButton.Font = Enum.Font.Gotham200,200)
+            optionButton.TextSize = 12
             optionButton.Font = Enum.Font.Gotham
             optionButton.TextXAlignment = Enum.TextXAlignment.Left
             optionButton.BorderSizePixel = 0
@@ -374,7 +366,6 @@ function GUI.Create(Config, ESP, Aimbot)
                 configTable[setting] = option
                 button.Text = option
                 optionsFrame.Visible = false
-                print(name, "set to", option)
             end)
         end
 
@@ -465,7 +456,6 @@ function GUI.Create(Config, ESP, Aimbot)
                 sliderFill.Size = UDim2.new(pos, 0, 1, 0)
                 sliderButton.Position = UDim2.new(pos, -5, 0.5, -5)
                 valueLabel.Text = tostring(value)
-                print(name, "set to", value)
             end
         end)
 
@@ -577,7 +567,6 @@ function GUI.Create(Config, ESP, Aimbot)
     sitButton.MouseButton1Click:Connect(function()
         if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
             game.Players.LocalPlayer.Character.Humanoid.Sit = true
-            print("Character sat down")
         end
     end)
 
@@ -695,336 +684,14 @@ function GUI.Create(Config, ESP, Aimbot)
     end)
 
     -- Initial console messages
-    addConsoleMessage("gameid -> " .. tostring(game.GameId))
-    addConsoleMessage("initialized")
-
-    -- Create Player List Page
-    local PlayerListScrollFrame = Instance.new("ScrollingFrame")
-    PlayerListScrollFrame.Size = UDim2.new(0.5, -5, 1, 0)
-    PlayerListScrollFrame.Position = UDim2.new(0, 0, 0, 0)
-    PlayerListScrollFrame.BackgroundTransparency = 1
-    PlayerListScrollFrame.ScrollBarThickness = 4
-    PlayerListScrollFrame.Parent = pages.PlayerListPage
-
-    local PlayerInfoFrame = Instance.new("Frame")
-    PlayerInfoFrame.Size = UDim2.new(0.5, -5, 1, 0)
-    PlayerInfoFrame.Position = UDim2.new(0.5, 5, 0, 0)
-    PlayerInfoFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    PlayerInfoFrame.BorderSizePixel = 0
-    PlayerInfoFrame.Parent = pages.PlayerListPage
-
-    local PlayerInfoCorner = Instance.new("UICorner")
-    PlayerInfoCorner.CornerRadius = UDim.new(0, 4)
-    PlayerInfoCorner.Parent = PlayerInfoFrame
-
-    -- Player List Functions
-    local function updatePlayerList()
-        -- Clear existing entries
-        for _, child in pairs(PlayerListScrollFrame:GetChildren()) do
-            if child:IsA("GuiObject") then
-                child:Destroy()
-            end
-        end
-
-        -- Create list layout
-        if not PlayerListScrollFrame:FindFirstChild("UIListLayout") then
-            local listLayout = Instance.new("UIListLayout")
-            listLayout.Padding = UDim.new(0, 5)
-            listLayout.Parent = PlayerListScrollFrame
-        end
-
-        -- Add players
-        for _, plr in pairs(game.Players:GetPlayers()) do
-            local button = Instance.new("TextButton")
-            button.Name = plr.Name .. "_Button"
-            button.Size = UDim2.new(1, -8, 0, 30)
-            button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            button.Text = plr.Name
-            button.TextColor3 = Color3.fromRGB(255, 255, 255)
-            button.TextSize = 14
-            button.Font = Enum.Font.Gotham
-            button.TextXAlignment = Enum.TextXAlignment.Left
-            button.AutoButtonColor = true
-            button.Parent = PlayerListScrollFrame
-
-            local padding = Instance.new("UIPadding")
-            padding.PaddingLeft = UDim.new(0, 8)
-            padding.Parent = button
-
-            local corner = Instance.new("UICorner")
-            corner.CornerRadius = UDim.new(0, 4)
-            corner.Parent = button
-
-            button.MouseButton1Click:Connect(function()
-                -- Clear previous info
-                for _, child in pairs(PlayerInfoFrame:GetChildren()) do
-                    if child:IsA("GuiObject") and child.Name ~= "UICorner" then
-                        child:Destroy()
-                    end
-                end
-
-                -- Create info container
-                local container = Instance.new("Frame")
-                container.Name = "InfoContainer"
-                container.Size = UDim2.new(1, -20, 1, -20)
-                container.Position = UDim2.new(0, 10, 0, 10)
-                container.BackgroundTransparency = 1
-                container.Parent = PlayerInfoFrame
-
-                -- Add player info
-                local function addInfo(text, value, yPos)
-                    local label = Instance.new("TextLabel")
-                    label.Size = UDim2.new(1, 0, 0, 25)
-                    label.Position = UDim2.new(0, 0, 0, yPos)
-                    label.BackgroundTransparency = 1
-                    label.Font = Enum.Font.Gotham
-                    label.TextSize = 14
-                    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    label.TextXAlignment = Enum.TextXAlignment.Left
-                    label.Text = text .. ": " .. tostring(value)
-                    label.Parent = container
-                    return yPos + 30
-                end
-
-                local yPos = 0
-                yPos = addInfo("Username", plr.Name, yPos)
-                yPos = addInfo("Display Name", plr.DisplayName, yPos)
-                yPos = addInfo("User ID", plr.UserId, yPos)
-                yPos = addInfo("Account Age", plr.AccountAge .. " days", yPos)
-                yPos = addInfo("Team", plr.Team and plr.Team.Name or "None", yPos)
-                
-                if plr.Character and plr.Character:FindFirstChild("Humanoid") then
-                    yPos = addInfo("Health", math.floor(plr.Character.Humanoid.Health) .. "/" .. math.floor(plr.Character.Humanoid.MaxHealth), yPos)
-                end
-
-                -- Add buttons
-                local function createButton(text, yPos, callback)
-                    local button = Instance.new("TextButton")
-                    button.Size = UDim2.new(1, 0, 0, 30)
-                    button.Position = UDim2.new(0, 0, 0, yPos)
-                    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                    button.Text = text
-                    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    button.TextSize = 14
-                    button.Font = Enum.Font.Gotham
-                    button.Parent = container
-
-                    local corner = Instance.new("UICorner")
-                    corner.CornerRadius = UDim.new(0, 4)
-                    corner.Parent = button
-
-                    button.MouseButton1Click:Connect(callback)
-                    return yPos + 35
-                end
-
-                yPos = yPos + 20  -- Add some spacing
-                yPos = createButton("Spectate", yPos, function()
-                    if plr.Character and plr.Character:FindFirstChild("Humanoid") then
-                        workspace.CurrentCamera.CameraSubject = plr.Character.Humanoid
-                        addConsoleMessage("Spectating " .. plr.Name)
-                    end
-                end)
-
-                yPos = createButton("Unspectate", yPos, function()
-                    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-                        workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character.Humanoid
-                        addConsoleMessage("Stopped spectating")
-                    end
-                end)
-
-                yPos = createButton("Teleport", yPos, function()
-                    if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and 
-                       game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = plr.Character.HumanoidRootPart.CFrame
-                        addConsoleMessage("Teleported to " .. plr.Name)
-                    end
-                end)
-
-                addConsoleMessage("Viewing info for " .. plr.Name)
-            end)
-        end
-
-        -- Update canvas size
-        local listLayout = PlayerListScrollFrame:FindFirstChild("UIListLayout")
-        if listLayout then
-            PlayerListScrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
-        end
-
-        addConsoleMessage("Player list updated")
-    end
-
-    -- Initialize player list
-    updatePlayerList()
-
-    -- Connect PlayerAdded and PlayerRemoving events
-    game.Players.PlayerAdded:Connect(function(plr)
-        updatePlayerList()
-        addConsoleMessage(plr.Name .. " joined the game")
-    end)
-
-    game.Players.PlayerRemoving:Connect(function(plr)
-        updatePlayerList()
-        addConsoleMessage(plr.Name .. " left the game")
-    end)
+    addConsoleMessage("GUI initialized")
+    addConsoleMessage("Current game ID: " .. tostring(game.GameId))
 
     -- Create Settings Page
     local settingsContainer = Instance.new("Frame")
     settingsContainer.Size = UDim2.new(1, 0, 1, 0)
     settingsContainer.BackgroundTransparency = 1
     settingsContainer.Parent = pages.SettingsPage
-
-    -- Config section
-    local configSection = Instance.new("Frame")
-    configSection.Size = UDim2.new(0.5, -10, 0, 200)
-    configSection.Position = UDim2.new(0.5, 5, 0, 5)
-    configSection.BackgroundTransparency = 1
-    configSection.Parent = settingsContainer
-
-    -- Config List
-    local configList = Instance.new("ScrollingFrame")
-    configList.Size = UDim2.new(1, 0, 1, -60)
-    configList.Position = UDim2.new(0, 0, 0, 60)
-    configList.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    configList.BorderSizePixel = 0
-    configList.ScrollBarThickness = 4
-    configList.Parent = configSection
-
-    -- Config system setup
-    local configFolder = "Dracula/Configs"
-
-    -- Create config folder if it doesn't exist
-    if not isfolder(configFolder) then
-        makefolder(configFolder)
-    end
-
-    -- Config functions
-    local function saveConfig(name)
-        local config = {}
-        for setting, value in pairs(Config) do
-            config[setting] = value
-        end
-        
-        local success, err = pcall(function()
-            writefile(configFolder .. "/" .. name .. ".cfg", game:GetService("HttpService"):JSONEncode(config))
-        end)
-        
-        if success then
-            addConsoleMessage("Saved config: " .. name)
-        else
-            addConsoleMessage("Failed to save config: " .. err)
-        end
-    end
-
-    local function loadConfig(name)
-        local success, content = pcall(function()
-            return readfile(configFolder .. "/" .. name .. ".cfg")
-        end)
-        
-        if success then
-            local config = game:GetService("HttpService"):JSONDecode(content)
-            for setting, value in pairs(config) do
-                Config[setting] = value
-            end
-            addConsoleMessage("Loaded config: " .. name)
-            -- Update UI to reflect loaded settings
-            updateAllUI()
-        else
-            addConsoleMessage("Failed to load config")
-        end
-    end
-
-    local function getConfigList()
-        local files = listfiles(configFolder)
-        local configs = {}
-        for _, file in pairs(files) do
-            local name = string.match(file, "([^/]+)%.cfg$")
-            if name then
-                table.insert(configs, name)
-            end
-        end
-        return configs
-    end
-
-    -- Config Buttons
-    local function createConfigButton(text, position, callback)
-        local button = Instance.new("TextButton")
-        button.Size = UDim2.new(0.3, -5, 0, 25)
-        button.Position = position
-        button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        button.Text = text
-        button.TextColor3 = Color3.fromRGB(200, 200, 200)
-        button.Font = Enum.Font.Gotham
-        button.TextSize = 14
-        button.Parent = configSection
-        
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 4)
-        corner.Parent = button
-        
-        button.MouseButton1Click:Connect(callback)
-        return button
-    end
-
-    createConfigButton("Load", UDim2.new(0, 5, 0, 5), function()
-        local selected = configList:FindFirstChild("Selected")
-        if selected then
-            loadConfig(selected.Text)
-        end
-    end)
-
-    createConfigButton("Save", UDim2.new(0.33, 5, 0, 5), function()
-        local name = "config" .. #getConfigList() + 1
-        saveConfig(name)
-        updateConfigList()
-    end)
-
-    createConfigButton("Open Folder", UDim2.new(0.66, 5, 0, 5), function()
-        if isfolder(configFolder) then
-            os.execute('explorer.exe "' .. game:GetService("PathService"):ParsePath(configFolder) .. '"')
-            addConsoleMessage("Opened config folder")
-        end
-    end)
-
-    -- Function to update config list
-    local function updateConfigList()
-        for _, child in pairs(configList:GetChildren()) do
-            if child:IsA("TextButton") then
-                child:Destroy()
-            end
-        end
-        
-        local yPos = 5
-        for _, configName in pairs(getConfigList()) do
-            local item = Instance.new("TextButton")
-            item.Size = UDim2.new(1, -10, 0, 25)
-            item.Position = UDim2.new(0, 5, 0, yPos)
-            item.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            item.Text = configName
-            item.TextColor3 = Color3.fromRGB(200, 200, 200)
-            item.Font = Enum.Font.Gotham
-            item.TextSize = 14
-            item.Parent = configList
-            
-            local corner = Instance.new("UICorner")
-            corner.CornerRadius = UDim.new(0, 4)
-            corner.Parent = item
-            
-            item.MouseButton1Click:Connect(function()
-                for _, other in pairs(configList:GetChildren()) do
-                    if other:IsA("TextButton") then
-                        other.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                    end
-                end
-                item.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-                item.Name = "Selected"
-            end)
-            
-            yPos = yPos + 30
-        end
-    end
-
-    -- Initial config list update
-    updateConfigList()
 
     -- Function to update all UI elements
     function updateAllUI()
@@ -1076,24 +743,6 @@ function GUI.Create(Config, ESP, Aimbot)
                     end
                 end
             end
-        end
-    end
-
-    -- Add hover effects for all buttons
-    local function addButtonHoverEffect(button)
-        button.MouseEnter:Connect(function()
-            button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        end)
-
-        button.MouseLeave:Connect(function()
-            button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        end)
-    end
-
-    -- Apply hover effects to all buttons
-    for _, button in pairs(ButtonContainer:GetChildren()) do
-        if button:IsA("TextButton") then
-            addButtonHoverEffect(button)
         end
     end
 
