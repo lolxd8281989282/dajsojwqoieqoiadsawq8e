@@ -89,33 +89,18 @@ else
     warn("Failed to load one or more modules")
 end
 
--- Setup Streamproof functionality
-local function setupStreamProof()
-    local function updateStreamProof()
-        for _, obj in pairs(game:GetDescendants()) do
-            if obj:IsA("Frame") and obj.Name:find("ESP") then
-                if Config.Misc.StreamProof then
-                    obj.ClipsDescendants = true
-                    obj.BackgroundTransparency = 1
-                    obj.Visible = false
-                    obj:SetAttribute("StreamProof", true)
-                else
-                    obj.ClipsDescendants = false
-                    obj.BackgroundTransparency = 0
-                    obj.Visible = true
-                    obj:SetAttribute("StreamProof", false)
-                end
-            end
-        end
-    end
-    
-    return updateStreamProof
-end
+-- Main loop with optimizations
+local lastUpdate = tick()
+local updateInterval = 1/60  -- Cap at 60 FPS
 
-local updateStreamProof = setupStreamProof()
-
--- Main loop
 runService.RenderStepped:Connect(function()
+    -- Throttle updates to prevent lag
+    local currentTime = tick()
+    if currentTime - lastUpdate < updateInterval then
+        return
+    end
+    lastUpdate = currentTime
+
     if Config and Config.Misc then
         -- Camera FOV
         if Config.Misc.ThirdPerson and player.Character then
@@ -151,9 +136,6 @@ runService.RenderStepped:Connect(function()
                 end
             end
         end
-
-        -- Update Streamproof
-        updateStreamProof()
     end
 end)
 
