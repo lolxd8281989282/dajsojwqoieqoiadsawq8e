@@ -15,7 +15,7 @@ local function loadModule(name)
     if not name then return nil end
     
     local success, content = pcall(function()
-        return game:HttpGet(BASE_URL .. "/" .. name .. ".lua")
+        return game:HttpGet(BASE_URL .. "/" .. name .. ".lua.txt")
     end)
     
     if not success then
