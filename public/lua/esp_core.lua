@@ -162,28 +162,29 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
         end
 
         local function UpdateESP()
-            local connection
-            connection = runService.RenderStepped:Connect(function()
-                if not settings.Enabled then
-                    for _, drawing in pairs(lines) do
-                        drawing.Visible = false
-                    end
-                    return
+        local connection
+        connection = runService.RenderStepped:Connect(function()
+            if not ESP.Enabled then
+                for _, drawing in pairs(lines) do
+                    drawing.Visible = false
                 end
+                return
+            end
 
-                if plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character.Humanoid.Health > 0 then
-                    local humanoid = plr.Character.Humanoid
-                    local rootPart = plr.Character.HumanoidRootPart
-                    local head = plr.Character:FindFirstChild("Head")
+            if plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character.Humanoid.Health > 0 then
+                local humanoid = plr.Character.Humanoid
+                local rootPart = plr.Character.HumanoidRootPart
+                local head = plr.Character:FindFirstChild("Head")
 
-                    if not head then return end
+                if not head then return end
 
-                    local screenPos, onScreen = camera:WorldToViewportPoint(rootPart.Position)
-                    local distance = (camera.CFrame.Position - rootPart.Position).Magnitude
+                local screenPos, onScreen = camera:WorldToViewportPoint(rootPart.Position)
+                local distance = (camera.CFrame.Position - rootPart.Position).Magnitude
+                local updateStreamProof = setupStreamProof()
 
-                    if onScreen and distance <= settings.Distance then
-                        local size = Vector2.new(2000 / distance, 2000 / distance)
-                        local screenSize = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+                if onScreen and distance <= ESP.Distance then
+                    local size = Vector2.new(2000 / distance, 2000 / distance)
+                    local screenSize = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
 
                         -- Team Check
                         if settings.TeamCheck and plr.Team == localPlayer.Team then
