@@ -7,20 +7,25 @@ local coreGui = game:GetService("CoreGui")
 local player = players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- Base URL for GitHub raw content
-local BASE_URL = "https://raw.githubusercontent.com/lolxd8281989282/dajsojwqoieqoiadsawq8e/master/public/lua"
+-- Base URL for direct file access
+local BASE_URL = "https://dracula.lol/lua"
 
 -- Load other modules
 local function loadModule(name)
     if not name then return nil end
     
-    local url = BASE_URL .. "/" .. name .. ".lua"
     local success, content = pcall(function()
-        return game:HttpGet(url)
+        return game:HttpGet(BASE_URL .. "/" .. name .. ".lua.txt")
     end)
     
     if not success then
         warn("Failed to fetch module " .. name .. ": " .. tostring(content))
+        return nil
+    end
+    
+    -- Check if content is HTML (error page)
+    if content:match("<!DOCTYPE") or content:match("<html") then
+        warn("Received HTML instead of Lua for module: " .. name)
         return nil
     end
     
@@ -38,31 +43,29 @@ local function loadModule(name)
         return nil
     end
     
-    if type(result) ~= "table" then
-        warn("Module " .. name .. " did not return a table")
-        return nil
-    end
-    
     print("Successfully loaded module: " .. name)
     return result
 end
 
--- Load all modules first
-print("Loading modules...")
+-- Load settings and configuration
 local Config = loadModule("settings_config")
+
+-- Load ESP core
 local ESP = loadModule("esp_core")
+
+-- Load Aimbot core
 local Aimbot = loadModule("aimbot_core")
+
+-- Load GUI creation
 local GUI = loadModule("gui_creation")
 
 -- Initialize the system
 if Config and ESP and Aimbot and GUI then
-    print("All modules loaded, initializing system...")
-    
     local success, error = pcall(function()
-        if Config.Init then Config.Init() end
-        if ESP.Init then ESP.Init(Config.ESP, workspace, players, runService, userInputService, player, camera) end
-        if Aimbot.Init then Aimbot.Init(Config.Aimbot, workspace, players, runService, userInputService, player, camera) end
-        if GUI.Create then GUI.Create(Config, ESP, Aimbot) end
+        Config.Init()
+        ESP.Init(Config.ESP, workspace, players, runService, userInputService, player, camera)
+        Aimbot.Init(Config.Aimbot, workspace, players, runService, userInputService, player, camera)
+        GUI.Create(Config, ESP, Aimbot)
     end)
     
     if success then
