@@ -7,8 +7,8 @@ local coreGui = game:GetService("CoreGui")
 local player = players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- Base URL for API access
-local BASE_URL = "https://dracula.lol/api/lua"
+-- Base URL for direct file access
+local BASE_URL = "https://dracula.lol/lua"
 
 -- Load other modules
 local function loadModule(name)
@@ -49,31 +49,15 @@ end
 
 -- Load settings and configuration
 local Config = loadModule("settings_config")
-if not Config then
-    warn("Failed to load configuration")
-    return
-end
 
 -- Load ESP core
 local ESP = loadModule("esp_core")
-if not ESP then
-    warn("Failed to load ESP core")
-    return
-end
 
 -- Load Aimbot core
 local Aimbot = loadModule("aimbot_core")
-if not Aimbot then
-    warn("Failed to load Aimbot core")
-    return
-end
 
 -- Load GUI creation
 local GUI = loadModule("gui_creation")
-if not GUI then
-    warn("Failed to load GUI creation")
-    return
-end
 
 -- Initialize the system
 if Config and ESP and Aimbot and GUI then
