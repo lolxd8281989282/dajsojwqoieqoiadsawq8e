@@ -20,7 +20,7 @@ function GUI.Create(Config, ESP, Aimbot)
     if not Config.Misc then
         warn("Config.Misc is nil")
         return
-    }
+    end -- Fixed syntax error: removed } and replaced with end
     
     if not Config.CurrentPage then
         Config.CurrentPage = "visual"  -- Set default page
@@ -29,9 +29,28 @@ function GUI.Create(Config, ESP, Aimbot)
     print("Creating GUI with Config:", Config)
     print("Current page:", Config.CurrentPage)
 
-    local ESPGui = Instance.new("ScreenGui")
-    ESPGui.Name = "ESPConfiguration"
-    ESPGui.Parent = game:GetService("CoreGui")
+    -- Create ScreenGui
+    local success, ESPGui = pcall(function()
+        local gui = Instance.new("ScreenGui")
+        gui.Name = "ESPConfiguration"
+        
+        -- Try to parent to CoreGui first
+        local success, error = pcall(function()
+            gui.Parent = game:GetService("CoreGui")
+        end)
+        
+        -- If CoreGui fails, try PlayerGui
+        if not success then
+            gui.Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+        end
+        
+        return gui
+    end)
+
+    if not success then
+        warn("Failed to create ScreenGui:", ESPGui)
+        return
+    end
 
     -- Create main frame
     local MainFrame = Instance.new("Frame")
@@ -341,6 +360,8 @@ function GUI.Create(Config, ESP, Aimbot)
             local optionButton = Instance.new("TextButton")
             optionButton.Text = option
             optionButton.Size = UDim2.new(1, 0, 0, 20)
+            optionButton.Position = UDim2.new(0, 0, 0, (i-1) * 20)
+            optionButton0,0,20)
             optionButton.Position = UDim2.new(0, 0, 0, (i-1) * 20)
             optionButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
             optionButton.TextColor3 = Color3.fromRGB(200, 200, 200)
