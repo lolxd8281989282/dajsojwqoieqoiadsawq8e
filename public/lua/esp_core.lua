@@ -2,7 +2,7 @@ local ESP = {}
 
 function ESP.Init(config, workspace, players, runService, userInputService, localPlayer, camera)
     -- ESP settings
-    local settings = config
+    local settings = config.ESP
 
     -- Drawing Functions
     local function NewLine()
@@ -22,7 +22,7 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
         text.Center = true
         text.Outline = true
         text.Color = settings.TextColor
-        text.Size = 13
+        text.Size = settings.TextSize
         text.Font = Drawing.Fonts.Monospace
         return text
     end
@@ -42,7 +42,7 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
         line.Visible = false
         line.From = Vector2.new(0, 0)
         line.To = Vector2.new(1, 1)
-        line.Color = settings.BoxColor
+        line.Color = settings.SkeletonColor
         line.Thickness = 1.5
         line.Transparency = 1
         return line
@@ -162,29 +162,28 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
         end
 
         local function UpdateESP()
-        local connection
-        connection = runService.RenderStepped:Connect(function()
-            if not ESP.Enabled then
-                for _, drawing in pairs(lines) do
-                    drawing.Visible = false
+            local connection
+            connection = runService.RenderStepped:Connect(function()
+                if not settings.Enabled then
+                    for _, drawing in pairs(lines) do
+                        drawing.Visible = false
+                    end
+                    return
                 end
-                return
-            end
 
-            if plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character.Humanoid.Health > 0 then
-                local humanoid = plr.Character.Humanoid
-                local rootPart = plr.Character.HumanoidRootPart
-                local head = plr.Character:FindFirstChild("Head")
+                if plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character.Humanoid.Health > 0 then
+                    local humanoid = plr.Character.Humanoid
+                    local rootPart = plr.Character.HumanoidRootPart
+                    local head = plr.Character:FindFirstChild("Head")
 
-                if not head then return end
+                    if not head then return end
 
-                local screenPos, onScreen = camera:WorldToViewportPoint(rootPart.Position)
-                local distance = (camera.CFrame.Position - rootPart.Position).Magnitude
-                local updateStreamProof = setupStreamProof()
+                    local screenPos, onScreen = camera:WorldToViewportPoint(rootPart.Position)
+                    local distance = (camera.CFrame.Position - rootPart.Position).Magnitude
 
-                if onScreen and distance <= ESP.Distance then
-                    local size = Vector2.new(2000 / distance, 2000 / distance)
-                    local screenSize = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+                    if onScreen and distance <= settings.Distance then
+                        local size = Vector2.new(2000 / distance, 2000 / distance)
+                        local screenSize = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
 
                         -- Team Check
                         if settings.TeamCheck and plr.Team == localPlayer.Team then
@@ -327,7 +326,9 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
                         
                             -- Health bar
                             local healthBarStart = barPos
-                            local healthBarEnd = barPos + Vector2.new(0, barSize.Y)
+                            local healthBarEn
+
+d = barPos + Vector2.new(0, barSize.Y)
                             local currentHeight = barSize.Y * (1 - healthPercent)
                             lines.healthBar.From = healthBarStart + Vector2.new(0, currentHeight)
                             lines.healthBar.To = healthBarEnd
@@ -472,7 +473,6 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
                                 line.Visible = false
                             end
                         end
-
                     else
                         for _, drawing in pairs(lines) do
                             drawing.Visible = false
