@@ -3,8 +3,8 @@ const nextConfig = {
   headers: async () => {
     return [
       {
-        // Serve Lua files directly from public directory
-        source: "/lua/:file*",
+        // Use .txt extension to bypass security
+        source: "/lua/:file*.txt",
         headers: [
           {
             key: "Content-Type",
@@ -25,6 +25,10 @@ const nextConfig = {
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
+          },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "*",
           },
         ],
       },
