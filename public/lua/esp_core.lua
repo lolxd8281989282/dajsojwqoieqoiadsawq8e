@@ -145,26 +145,17 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
             local bottomTorso = lowerTorso or torso
 
             -- Draw complete skeleton
-            -- Head and Torso
             updateLine(lines.skeletonHead, head, mainTorso)
             updateLine(lines.skeletonSpineUpper, upperTorso, lowerTorso)
-
-            -- Left Arm
             updateLine(lines.skeletonLeftShoulder, mainTorso, leftUpperArm)
             updateLine(lines.skeletonLeftUpperArm, leftUpperArm, leftLowerArm)
             updateLine(lines.skeletonLeftLowerArm, leftLowerArm, leftHand)
-
-            -- Right Arm
             updateLine(lines.skeletonRightShoulder, mainTorso, rightUpperArm)
             updateLine(lines.skeletonRightUpperArm, rightUpperArm, rightLowerArm)
             updateLine(lines.skeletonRightLowerArm, rightLowerArm, rightHand)
-
-            -- Left Leg
             updateLine(lines.skeletonLeftHip, bottomTorso, leftUpperLeg)
             updateLine(lines.skeletonLeftUpperLeg, leftUpperLeg, leftLowerLeg)
             updateLine(lines.skeletonLeftLowerLeg, leftLowerLeg, leftFoot)
-
-            -- Right Leg
             updateLine(lines.skeletonRightHip, bottomTorso, rightUpperLeg)
             updateLine(lines.skeletonRightUpperLeg, rightUpperLeg, rightLowerLeg)
             updateLine(lines.skeletonRightLowerLeg, rightLowerLeg, rightFoot)
@@ -422,28 +413,46 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
                             lines.armorBarBackground.Visible = false
                         end
 
-                        -- Equipped Item
-                        if settings.ShowEquippedItem then
-                            local tool = plr.Character:FindFirstChildOfClass("Tool")
-                            if tool then
-                                lines.itemText.Text = tool.Name
-                                lines.itemText.Position = Vector2.new(screenPos.X, screenPos.Y + size.Y * 1.5)
-                                lines.itemText.Color = settings.EquippedItemColor
+                        -- Equipped Item and Distance
+                        if settings.ShowEquippedItem or settings.ShowDistance then
+                            lines.itemText.Position = Vector2.new(screenPos.X, screenPos.Y + size.Y * 2)
+                            local text = ""
+                            
+                            if settings.ShowEquippedItem then
+                                local tool = plr.Character:FindFirstChildOfClass("Tool")
+                                if tool then
+                                    text = tool.Name
+                                end
+                            end
+                            
+                            if settings.ShowDistance then
+                                -- Calculate distance once per frame
+                                local distanceValue = math.floor(distance * 10) / 10  -- Round to 1 decimal place
+                                local distanceText = string.format("%.1f m", distanceValue)
+                                
+                                if text ~= "" then
+                                    text = text .. "\n" .. distanceText
+                                else
+                                    text = distanceText
+                                end
+                                
+                                -- Only update if distance changed significantly (prevent jitter)
+                                if not lines.itemText.LastDistance or math.abs(lines.itemText.LastDistance - distanceValue) > 0.1 then
+                                    lines.itemText.LastDistance = distanceValue
+                                else
+                                    distanceValue = lines.itemText.LastDistance
+                                end
+                            end
+                            
+                            if text ~= "" then
+                                lines.itemText.Text = text
                                 lines.itemText.Visible = true
+                                lines.itemText.Color = settings.ShowEquippedItem and settings.EquippedItemColor or settings.DistanceColor
                             else
                                 lines.itemText.Visible = false
                             end
                         else
                             lines.itemText.Visible = false
-                        end
-
-                        -- Distance
-                        if settings.ShowDistance then
-                            local distanceText = string.format("%.1f m", distance)
-                            lines.itemText.Text = (lines.itemText.Text ~= "" and lines.itemText.Text .. "\n" or "") .. distanceText
-                            lines.itemText.Position = Vector2.new(screenPos.X, screenPos.Y + size.Y * (settings.ShowEquippedItem and 2 or 1.5))
-                            lines.itemText.Color = settings.DistanceColor
-                            lines.itemText.Visible = true
                         end
 
                         -- Skeleton ESP
