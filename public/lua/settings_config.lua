@@ -52,6 +52,23 @@ local Config = {
         MaxLockTime = 5,
         SnapSpeed = 0.2,
     },
+    Misc = {
+        ShowWatermark = true,
+        ShowKeybindList = true,
+        ThirdPerson = false,
+        CameraFOV = 70,
+        CameraAmount = 50,
+        AntiClipping = false,
+        CustomFog = false,
+        FogDistance = 500,
+        CustomBrightness = false,
+        BrightnessStrength = 50,
+        SpeedEnabled = false,
+        SpeedAmount = 50,
+        FlightEnabled = false,
+        FlightAmount = 50,
+        StreamProof = false,
+    },
     CurrentPage = "visual"
 }
 
