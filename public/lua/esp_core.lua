@@ -223,8 +223,6 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
                                 lines.line1.From = boxPosition
                                 lines.line1.To = boxPosition + Vector2.new(cornerSize, 0)
                                 lines.line2.From = boxPosition
-                                lines.line2.To =
-                                lines.line2.From = boxPosition
                                 lines.line2.To = boxPosition + Vector2.new(0, cornerSize)
 
                                 -- Top right
