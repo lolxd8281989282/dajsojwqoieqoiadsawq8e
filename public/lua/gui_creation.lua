@@ -361,8 +361,6 @@ function GUI.Create(Config, ESP, Aimbot)
             optionButton.Text = option
             optionButton.Size = UDim2.new(1, 0, 0, 20)
             optionButton.Position = UDim2.new(0, 0, 0, (i-1) * 20)
-            optionButton0,0,20)
-            optionButton.Position = UDim2.new(0, 0, 0, (i-1) * 20)
             optionButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
             optionButton.TextColor3 = Color3.fromRGB(200, 200, 200)
             optionButton.TextSize = 12
