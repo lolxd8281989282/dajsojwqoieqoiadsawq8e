@@ -1,6 +1,34 @@
 local GUI = {}
 
 function GUI.Create(Config, ESP, Aimbot)
+    -- Add error checks
+    if not Config then
+        warn("Config is nil")
+        return
+    end
+    
+    if not Config.ESP then
+        warn("Config.ESP is nil")
+        return
+    end
+    
+    if not Config.Aimbot then
+        warn("Config.Aimbot is nil")
+        return
+    end
+    
+    if not Config.Misc then
+        warn("Config.Misc is nil")
+        return
+    }
+    
+    if not Config.CurrentPage then
+        Config.CurrentPage = "visual"  -- Set default page
+    end
+
+    print("Creating GUI with Config:", Config)
+    print("Current page:", Config.CurrentPage)
+
     local ESPGui = Instance.new("ScreenGui")
     ESPGui.Name = "ESPConfiguration"
     ESPGui.Parent = game:GetService("CoreGui")
@@ -90,9 +118,11 @@ function GUI.Create(Config, ESP, Aimbot)
         page.BackgroundTransparency = 1
         page.Visible = false
         page.Parent = Container
+        print("Created page:", name)
     end
 
-    pages.VisualsPage.Visible = true  -- Set the default visible page
+    pages.VisualsPage.Visible = Config.CurrentPage == "visual"
+    print("Set VisualsPage visibility to:", pages.VisualsPage.Visible)
 
     local function updateNavColors()
         for name, button in pairs(navButtons) do
@@ -117,11 +147,14 @@ function GUI.Create(Config, ESP, Aimbot)
         navButtons[name] = button
         
         button.MouseButton1Click:Connect(function()
+            print("Switching to page:", name)
             Config.CurrentPage = name
             updateNavColors()
             
             for pageName, page in pairs(pages) do
-                page.Visible = (pageName:lower():gsub("page", "") == name)
+                local shouldBeVisible = (pageName:lower():gsub("page", "") == name)
+                page.Visible = shouldBeVisible
+                print(pageName, "visibility set to", shouldBeVisible)
             end
         end)
     end
@@ -202,7 +235,7 @@ function GUI.Create(Config, ESP, Aimbot)
         return content, updateHeight, sectionContainer
     end
 
-    local function createToggle(name, parent, position, setting)
+    local function createToggle(name, parent, position, setting, configTable)
         local toggleFrame = Instance.new("Frame")
         toggleFrame.Size = UDim2.new(1, 0, 0, 20)
         toggleFrame.Position = position
@@ -245,19 +278,20 @@ function GUI.Create(Config, ESP, Aimbot)
         label.Parent = toggleFrame
 
         local function updateToggle()
-            indicator.BackgroundTransparency = Config.ESP[setting] and 0 or 1
+            indicator.BackgroundTransparency = configTable[setting] and 0 or 1
         end
 
         updateToggle()
         button.MouseButton1Click:Connect(function()
-            Config.ESP[setting] = not Config.ESP[setting]
+            configTable[setting] = not configTable[setting]
             updateToggle()
+            print(name, "set to", configTable[setting])
         end)
 
         return toggleFrame
     end
 
-    local function createDropdown(name, parent, position, options, setting)
+    local function createDropdown(name, parent, position, options, setting, configTable)
         local dropdownFrame = Instance.new("Frame")
         dropdownFrame.Size = UDim2.new(1, 0, 0, 45)
         dropdownFrame.Position = position
@@ -275,7 +309,7 @@ function GUI.Create(Config, ESP, Aimbot)
         nameLabel.Parent = dropdownFrame
 
         local button = Instance.new("TextButton")
-        button.Text = Config.ESP[setting]
+        button.Text = configTable[setting]
         button.Size = UDim2.new(1, 0, 0, 20)
         button.Position = UDim2.new(0, 0, 0, 25)
         button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
@@ -318,9 +352,10 @@ function GUI.Create(Config, ESP, Aimbot)
             optionButton.Parent = optionsFrame
 
             optionButton.MouseButton1Click:Connect(function()
-                Config.ESP[setting] = option
+                configTable[setting] = option
                 button.Text = option
                 optionsFrame.Visible = false
+                print(name, "set to", option)
             end)
         end
 
@@ -331,7 +366,7 @@ function GUI.Create(Config, ESP, Aimbot)
         return dropdownFrame
     end
 
-    local function createSlider(name, parent, position, setting, min, max)
+    local function createSlider(name, parent, position, setting, min, max, configTable)
         local sliderFrame = Instance.new("Frame")
         sliderFrame.Size = UDim2.new(1, 0, 0, 25)
         sliderFrame.Position = position
@@ -361,14 +396,14 @@ function GUI.Create(Config, ESP, Aimbot)
         sliderBGCorner.Parent = sliderBG
 
         local sliderFill = Instance.new("Frame")
-        sliderFill.Size = UDim2.new((Config.ESP[setting] - min) / (max - min), 0, 1, 0)
+        sliderFill.Size = UDim2.new((configTable[setting] - min) / (max - min), 0, 1, 0)
         sliderFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         sliderFill.BorderSizePixel = 0
         sliderFill.Parent = sliderBG
 
         local sliderButton = Instance.new("TextButton")
         sliderButton.Size = UDim2.new(0, 10, 0, 10)
-        sliderButton.Position = UDim2.new((Config.ESP[setting] - min) / (max - min), -5, 0.5, -5)
+        sliderButton.Position = UDim2.new((configTable[setting] - min) / (max - min), -5, 0.5, -5)
         sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         sliderButton.Text = ""
         sliderButton.Parent = sliderBG
@@ -378,7 +413,7 @@ function GUI.Create(Config, ESP, Aimbot)
         sliderButtonCorner.Parent = sliderButton
 
         local valueLabel = Instance.new("TextLabel")
-        valueLabel.Text = tostring(Config.ESP[setting])
+        valueLabel.Text = tostring(configTable[setting])
         valueLabel.Size = UDim2.new(0, 30, 1, 0)
         valueLabel.Position = UDim2.new(1, -30, 0, 0)
         valueLabel.BackgroundTransparency = 1
@@ -407,10 +442,11 @@ function GUI.Create(Config, ESP, Aimbot)
                 local pos = (input.Position.X - sliderBG.AbsolutePosition.X) / sliderBG.AbsoluteSize.X
                 pos = math.clamp(pos, 0, 1)
                 local value = math.floor(min + (max - min) * pos)
-                Config.ESP[setting] = value
+                configTable[setting] = value
                 sliderFill.Size = UDim2.new(pos, 0, 1, 0)
                 sliderButton.Position = UDim2.new(pos, -5, 0.5, -5)
                 valueLabel.Text = tostring(value)
+                print(name, "set to", value)
             end
         end)
 
@@ -431,32 +467,32 @@ function GUI.Create(Config, ESP, Aimbot)
 
     -- ESP Section
     local espContent, updateESPHeight = createSection("ESP", LeftColumn, UDim2.new(0, 0, 0, 0))
-    createToggle("Enabled", espContent, UDim2.new(0, 0, 0, 0), "Enabled")
-    createToggle("Team Check", espContent, UDim2.new(0, 0, 0, 25), "TeamCheck")
-    createToggle("Outline", espContent, UDim2.new(0, 0, 0, 50), "Outline")
-    createToggle("Self ESP", espContent, UDim2.new(0, 0, 0, 75), "SelfESP")
-    createSlider("Distance", espContent, UDim2.new(0, 0, 0, 100), "Distance", 0, 2000)
+    createToggle("Enabled", espContent, UDim2.new(0, 0, 0, 0), "Enabled", Config.ESP)
+    createToggle("Team Check", espContent, UDim2.new(0, 0, 0, 25), "TeamCheck", Config.ESP)
+    createToggle("Outline", espContent, UDim2.new(0, 0, 0, 50), "Outline", Config.ESP)
+    createToggle("Self ESP", espContent, UDim2.new(0, 0, 0, 75), "SelfESP", Config.ESP)
+    createSlider("Distance", espContent, UDim2.new(0, 0, 0, 100), "Distance", 0, 2000, Config.ESP)
     updateESPHeight()
 
     -- Box Settings Section
     local boxContent, updateBoxHeight = createSection("Box", LeftColumn, UDim2.new(0, 0, 0, 200))
-    createToggle("Enabled", boxContent, UDim2.new(0, 0, 0, 0), "ShowBoxes")
-    createToggle("Fill Box", boxContent, UDim2.new(0, 0, 0, 25), "FillBox")
-    createDropdown("Box Type", boxContent, UDim2.new(0, 0, 0, 50), {"Corners", "Full"}, "BoxType")
+    createToggle("Enabled", boxContent, UDim2.new(0, 0, 0, 0), "ShowBoxes", Config.ESP)
+    createToggle("Fill Box", boxContent, UDim2.new(0, 0, 0, 25), "FillBox", Config.ESP)
+    createDropdown("Box Type", boxContent, UDim2.new(0, 0, 0, 50), {"Corners", "Full"}, "BoxType", Config.ESP)
     updateBoxHeight()
 
     -- Name Settings Section
     local nameContent, updateNameHeight = createSection("Name", RightColumn, UDim2.new(0, 0, 0, 0))
-    createToggle("Enabled", nameContent, UDim2.new(0, 0, 0, 0), "ShowNames")
+    createToggle("Enabled", nameContent, UDim2.new(0, 0, 0, 0), "ShowNames", Config.ESP)
     updateNameHeight()
 
     -- Other Settings Section
     local otherContent, updateOtherHeight = createSection("Other", RightColumn, UDim2.new(0, 0, 0, 50))
-    createToggle("Equipped Item", otherContent, UDim2.new(0, 0, 0, 0), "ShowEquippedItem")
-    createToggle("Skeleton", otherContent, UDim2.new(0, 0, 0, 25), "ShowSkeleton")
-    createToggle("Head Dot", otherContent, UDim2.new(0, 0, 0, 50), "ShowHeadDot")
-    createToggle("Distance", otherContent, UDim2.new(0, 0, 0, 75), "ShowDistance")
-    createToggle("Armor Bar", otherContent, UDim2.new(0, 0, 0, 100), "ShowArmorBar")
+    createToggle("Equipped Item", otherContent, UDim2.new(0, 0, 0, 0), "ShowEquippedItem", Config.ESP)
+    createToggle("Skeleton", otherContent, UDim2.new(0, 0, 0, 25), "ShowSkeleton", Config.ESP)
+    createToggle("Head Dot", otherContent, UDim2.new(0, 0, 0, 50), "ShowHeadDot", Config.ESP)
+    createToggle("Distance", otherContent, UDim2.new(0, 0, 0, 75), "ShowDistance", Config.ESP)
+    createToggle("Armor Bar", otherContent, UDim2.new(0, 0, 0, 100), "ShowArmorBar", Config.ESP)
     updateOtherHeight()
 
     -- Create Aiming Page
@@ -473,12 +509,12 @@ function GUI.Create(Config, ESP, Aimbot)
 
     -- Aimbot Main Section
     local aimbotContent, updateAimbotHeight = createSection("Aimbot", AimingLeftColumn, UDim2.new(0, 0, 0, 0))
-    createToggle("Enabled", aimbotContent, UDim2.new(0, 0, 0, 0), "Enabled")
-    createToggle("Team Check", aimbotContent, UDim2.new(0, 0, 0, 25), "TeamCheck")
-    createToggle("Visibility Check", aimbotContent, UDim2.new(0, 0, 0, 50), "VisibilityCheck")
-    createToggle("Lock Target", aimbotContent, UDim2.new(0, 0, 0, 75), "LockTarget")
-    createToggle("Sticky Aim", aimbotContent, UDim2.new(0, 0, 0, 100), "StickyAim")
-    createSlider("FOV", aimbotContent, UDim2.new(0, 0, 0, 125), "FOV", 0, 360)
+    createToggle("Enabled", aimbotContent, UDim2.new(0, 0, 0, 0), "Enabled", Config.Aimbot)
+    createToggle("Team Check", aimbotContent, UDim2.new(0, 0, 0, 25), "TeamCheck", Config.Aimbot)
+    createToggle("Visibility Check", aimbotContent, UDim2.new(0, 0, 0, 50), "VisibilityCheck", Config.Aimbot)
+    createToggle("Lock Target", aimbotContent, UDim2.new(0, 0, 0, 75), "LockTarget", Config.Aimbot)
+    createToggle("Sticky Aim", aimbotContent, UDim2.new(0, 0, 0, 100), "StickyAim", Config.Aimbot)
+    createSlider("FOV", aimbotContent, UDim2.new(0, 0, 0, 125), "FOV", 0, 360, Config.Aimbot)
     updateAimbotHeight()
 
     -- Create Misc Page
@@ -495,14 +531,14 @@ function GUI.Create(Config, ESP, Aimbot)
 
     -- Camera Section
     local cameraContent, updateCameraHeight = createSection("Camera", MiscLeftColumn, UDim2.new(0, 0, 0, 0))
-    createToggle("Third Person", cameraContent, UDim2.new(0, 0, 0, 0), "ThirdPerson")
-    createSlider("FOV", cameraContent, UDim2.new(0, 0, 0, 25), "CameraFOV", 30, 120)
-    createSlider("Amount", cameraContent, UDim2.new(0, 0, 0, 70), "CameraAmount", 0, 100)
+    createToggle("Third Person", cameraContent, UDim2.new(0, 0, 0, 0), "ThirdPerson", Config.Misc)
+    createSlider("FOV", cameraContent, UDim2.new(0, 0, 0, 25), "CameraFOV", 30, 120, Config.Misc)
+    createSlider("Amount", cameraContent, UDim2.new(0, 0, 0, 70), "CameraAmount", 0, 100, Config.Misc)
     updateCameraHeight()
 
     -- Character Section
     local characterContent, updateCharacterHeight = createSection("Character", MiscLeftColumn, UDim2.new(0, 0, 0, 160))
-    createToggle("Anti-Clipping", characterContent, UDim2.new(0, 0, 0, 0), "AntiClipping")
+    createToggle("Anti-Clipping", characterContent, UDim2.new(0, 0, 0, 0), "AntiClipping", Config.Misc)
 
     -- Create Sit Button
     local sitButton = Instance.new("TextButton")
@@ -522,7 +558,7 @@ function GUI.Create(Config, ESP, Aimbot)
     sitButton.MouseButton1Click:Connect(function()
         if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
             game.Players.LocalPlayer.Character.Humanoid.Sit = true
-            addConsoleMessage("Character sat down")
+            print("Character sat down")
         end
     end)
 
@@ -530,18 +566,18 @@ function GUI.Create(Config, ESP, Aimbot)
 
     -- World Section
     local worldContent, updateWorldHeight = createSection("World", MiscRightColumn, UDim2.new(0, 0, 0, 0))
-    createToggle("Custom Fog", worldContent, UDim2.new(0, 0, 0, 0), "CustomFog")
-    createSlider("Distance", worldContent, UDim2.new(0, 0, 0, 25), "FogDistance", 0, 1000)
-    createToggle("Custom Brightness", worldContent, UDim2.new(0, 0, 0, 70), "CustomBrightness")
-    createSlider("Strength", worldContent, UDim2.new(0, 0, 0, 95), "BrightnessStrength", 0, 100)
+    createToggle("Custom Fog", worldContent, UDim2.new(0, 0, 0, 0), "CustomFog", Config.Misc)
+    createSlider("Distance", worldContent, UDim2.new(0, 0, 0, 25), "FogDistance", 0, 1000, Config.Misc)
+    createToggle("Custom Brightness", worldContent, UDim2.new(0, 0, 0, 70), "CustomBrightness", Config.Misc)
+    createSlider("Strength", worldContent, UDim2.new(0, 0, 0, 95), "BrightnessStrength", 0, 100, Config.Misc)
     updateWorldHeight()
 
     -- Movement Section
     local movementContent, updateMovementHeight = createSection("Movement", MiscRightColumn, UDim2.new(0, 0, 0, 160))
-    createToggle("Speed", movementContent, UDim2.new(0, 0, 0, 0), "SpeedEnabled")
-    createSlider("Amount", movementContent, UDim2.new(0, 0, 0, 25), "SpeedAmount", 0, 100)
-    createToggle("Flight", movementContent, UDim2.new(0, 0, 0, 70), "FlightEnabled")
-    createSlider("Amount", movementContent, UDim2.new(0, 0, 0, 95), "FlightAmount", 0, 100)
+    createToggle("Speed", movementContent, UDim2.new(0, 0, 0, 0), "SpeedEnabled", Config.Misc)
+    createSlider("Amount", movementContent, UDim2.new(0, 0, 0, 25), "SpeedAmount", 0, 100, Config.Misc)
+    createToggle("Flight", movementContent, UDim2.new(0, 0, 0, 70), "FlightEnabled", Config.Misc)
+    createSlider("Amount", movementContent, UDim2.new(0, 0, 0, 95), "FlightAmount", 0, 100, Config.Misc)
     updateMovementHeight()
 
     -- Create Output Page
@@ -973,19 +1009,48 @@ function GUI.Create(Config, ESP, Aimbot)
 
     -- Function to update all UI elements
     function updateAllUI()
-        -- Update all toggles
+        -- Update all toggles, sliders, and dropdowns here
+        -- This function should be called after loading a config
         for _, page in pairs(pages) do
             for _, child in pairs(page:GetDescendants()) do
                 if child:IsA("Frame") and child:FindFirstChild("Content") then
                     for _, element in pairs(child.Content:GetChildren()) do
-                        -- Update toggles
-                        if element:IsA("Frame") and element:FindFirstChild("TextButton") then
-                            local button = element:FindFirstChild("TextButton")
-                            local indicator = button:FindFirstChild("Frame")
-                            if indicator then
-                                local setting = element.Name
-                                if Config.ESP[setting] ~= nil then
-                                    indicator.BackgroundTransparency = Config.ESP[setting] and 0 or 1
+                        if element:IsA("Frame") then
+                            local setting = element.Name
+                            if element:FindFirstChild("TextButton") then
+                                -- Update toggle
+                                local button = element:FindFirstChild("TextButton")
+                                local indicator = button:FindFirstChild("Frame")
+                                if indicator then
+                                    if Config.ESP[setting] ~= nil then
+                                        indicator.BackgroundTransparency = Config.ESP[setting] and 0 or 1
+                                    elseif Config.Aimbot[setting] ~= nil then
+                                        indicator.BackgroundTransparency = Config.Aimbot[setting] and 0 or 1
+                                    elseif Config.Misc[setting] ~= nil then
+                                        indicator.BackgroundTransparency = Config.Misc[setting] and 0 or 1
+                                    end
+                                end
+                            elseif element:FindFirstChild("TextLabel") and element:FindFirstChild("Frame") then
+                                -- Update slider
+                                local sliderBG = element:FindFirstChild("Frame")
+                                local sliderFill = sliderBG:FindFirstChild("Frame")
+                                local sliderButton = sliderBG:FindFirstChild("TextButton")
+                                local valueLabel = element:FindFirstChild("TextLabel")
+                                if sliderFill and sliderButton and valueLabel then
+                                    local value, min, max
+                                    if Config.ESP[setting] ~= nil then
+                                        value, min, max = Config.ESP[setting], 0, 2000
+                                    elseif Config.Aimbot[setting] ~= nil then
+                                        value, min, max = Config.Aimbot[setting], 0, 360
+                                    elseif Config.Misc[setting] ~= nil then
+                                        value, min, max = Config.Misc[setting], 0, 100
+                                    end
+                                    if value and min and max then
+                                        local pos = (value - min) / (max - min)
+                                        sliderFill.Size = UDim2.new(pos, 0, 1, 0)
+                                        sliderButton.Position = UDim2.new(pos, -5, 0.5, -5)
+                                        valueLabel.Text = tostring(value)
+                                    end
                                 end
                             end
                         end
