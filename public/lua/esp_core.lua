@@ -216,9 +216,6 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
                             local boxPosition = Vector2.new(screenPos.X - size.X, screenPos.Y - size.Y * 1.5)
 
                             if settings.BoxType == "Corners" then
-                                -- Draw corner box
-                                local cornerSize = boxSize.X * 0.2
-
                                 -- Top left
                                 lines.line1.From = boxPosition
                                 lines.line1.To = boxPosition + Vector2.new(cornerSize, 0)
