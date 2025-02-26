@@ -500,6 +500,34 @@ function GUI.Create(Config, ESP, Aimbot)
     createSlider("Amount", cameraContent, UDim2.new(0, 0, 0, 70), "CameraAmount", 0, 100)
     updateCameraHeight()
 
+    -- Character Section
+    local characterContent, updateCharacterHeight = createSection("Character", MiscLeftColumn, UDim2.new(0, 0, 0, 160))
+    createToggle("Anti-Clipping", characterContent, UDim2.new(0, 0, 0, 0), "AntiClipping")
+
+    -- Create Sit Button
+    local sitButton = Instance.new("TextButton")
+    sitButton.Size = UDim2.new(1, 0, 0, 30)
+    sitButton.Position = UDim2.new(0, 0, 0, 30)
+    sitButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    sitButton.Text = "Sit"
+    sitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sitButton.TextSize = 14
+    sitButton.Font = Enum.Font.Gotham
+    sitButton.Parent = characterContent
+
+    local sitCorner = Instance.new("UICorner")
+    sitCorner.CornerRadius = UDim.new(0, 4)
+    sitCorner.Parent = sitButton
+
+    sitButton.MouseButton1Click:Connect(function()
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.Sit = true
+            addConsoleMessage("Character sat down")
+        end
+    end)
+
+    updateCharacterHeight()
+
     -- World Section
     local worldContent, updateWorldHeight = createSection("World", MiscRightColumn, UDim2.new(0, 0, 0, 0))
     createToggle("Custom Fog", worldContent, UDim2.new(0, 0, 0, 0), "CustomFog")
@@ -507,6 +535,14 @@ function GUI.Create(Config, ESP, Aimbot)
     createToggle("Custom Brightness", worldContent, UDim2.new(0, 0, 0, 70), "CustomBrightness")
     createSlider("Strength", worldContent, UDim2.new(0, 0, 0, 95), "BrightnessStrength", 0, 100)
     updateWorldHeight()
+
+    -- Movement Section
+    local movementContent, updateMovementHeight = createSection("Movement", MiscRightColumn, UDim2.new(0, 0, 0, 160))
+    createToggle("Speed", movementContent, UDim2.new(0, 0, 0, 0), "SpeedEnabled")
+    createSlider("Amount", movementContent, UDim2.new(0, 0, 0, 25), "SpeedAmount", 0, 100)
+    createToggle("Flight", movementContent, UDim2.new(0, 0, 0, 70), "FlightEnabled")
+    createSlider("Amount", movementContent, UDim2.new(0, 0, 0, 95), "FlightAmount", 0, 100)
+    updateMovementHeight()
 
     -- Create Output Page
     local ConsoleFrame = Instance.new("ScrollingFrame")
@@ -578,7 +614,7 @@ function GUI.Create(Config, ESP, Aimbot)
         text.BackgroundTransparency = 1
         text.Text = string.format("[%s] : %s", timestamp, message)
         text.TextColor3 = Color3.fromRGB(200, 200, 200)
-        text.TextSize = 11  -- Reduced from 14 to 11
+        text.TextSize = 11
         text.Font = Enum.Font.SourceSans
         text.TextXAlignment = Enum.TextXAlignment.Left
         text.Parent = ConsoleFrame
@@ -606,20 +642,6 @@ function GUI.Create(Config, ESP, Aimbot)
     -- Initial console messages
     addConsoleMessage("gameid -> " .. tostring(game.GameId))
     addConsoleMessage("initialized")
-
-    -- Add hover effects
-    local function addButtonHoverEffect(button)
-        button.MouseEnter:Connect(function()
-            button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        end)
-
-        button.MouseLeave:Connect(function()
-            button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        end)
-    end
-
-    addButtonHoverEffect(ClearButton)
-    addButtonHoverEffect(CopyButton)
 
     -- Create Player List Page
     local PlayerListScrollFrame = Instance.new("ScrollingFrame")
@@ -796,9 +818,7 @@ function GUI.Create(Config, ESP, Aimbot)
     settingsContainer.BackgroundTransparency = 1
     settingsContainer.Parent = pages.SettingsPage
 
-    local currentY = 5
-
-    -- Add Config section
+    -- Config section
     local configSection = Instance.new("Frame")
     configSection.Size = UDim2.new(0.5, -10, 0, 200)
     configSection.Position = UDim2.new(0.5, 5, 0, 5)
@@ -814,6 +834,62 @@ function GUI.Create(Config, ESP, Aimbot)
     configList.ScrollBarThickness = 4
     configList.Parent = configSection
 
+    -- Config system setup
+    local configFolder = "Dracula/Configs"
+
+    -- Create config folder if it doesn't exist
+    if not isfolder(configFolder) then
+        makefolder(configFolder)
+    end
+
+    -- Config functions
+    local function saveConfig(name)
+        local config = {}
+        for setting, value in pairs(Config) do
+            config[setting] = value
+        end
+        
+        local success, err = pcall(function()
+            writefile(configFolder .. "/" .. name .. ".cfg", game:GetService("HttpService"):JSONEncode(config))
+        end)
+        
+        if success then
+            addConsoleMessage("Saved config: " .. name)
+        else
+            addConsoleMessage("Failed to save config: " .. err)
+        end
+    end
+
+    local function loadConfig(name)
+        local success, content = pcall(function()
+            return readfile(configFolder .. "/" .. name .. ".cfg")
+        end)
+        
+        if success then
+            local config = game:GetService("HttpService"):JSONDecode(content)
+            for setting, value in pairs(config) do
+                Config[setting] = value
+            end
+            addConsoleMessage("Loaded config: " .. name)
+            -- Update UI to reflect loaded settings
+            updateAllUI()
+        else
+            addConsoleMessage("Failed to load config")
+        end
+    end
+
+    local function getConfigList()
+        local files = listfiles(configFolder)
+        local configs = {}
+        for _, file in pairs(files) do
+            local name = string.match(file, "([^/]+)%.cfg$")
+            if name then
+                table.insert(configs, name)
+            end
+        end
+        return configs
+    end
+
     -- Config Buttons
     local function createConfigButton(text, position, callback)
         local button = Instance.new("TextButton")
@@ -825,6 +901,11 @@ function GUI.Create(Config, ESP, Aimbot)
         button.Font = Enum.Font.Gotham
         button.TextSize = 14
         button.Parent = configSection
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 4)
+        corner.Parent = button
+        
         button.MouseButton1Click:Connect(callback)
         return button
     end
@@ -832,21 +913,21 @@ function GUI.Create(Config, ESP, Aimbot)
     createConfigButton("Load", UDim2.new(0, 5, 0, 5), function()
         local selected = configList:FindFirstChild("Selected")
         if selected then
-            -- Load config logic here
-            addConsoleMessage("Loaded config: " .. selected.Text)
+            loadConfig(selected.Text)
         end
     end)
 
     createConfigButton("Save", UDim2.new(0.33, 5, 0, 5), function()
-        -- Save config logic here
-        local name = "config" .. #configList:GetChildren() + 1
-        addConsoleMessage("Saved config: " .. name)
+        local name = "config" .. #getConfigList() + 1
+        saveConfig(name)
         updateConfigList()
     end)
 
     createConfigButton("Open Folder", UDim2.new(0.66, 5, 0, 5), function()
-        -- Open config folder logic here
-        addConsoleMessage("Opened config folder")
+        if isfolder(configFolder) then
+            os.execute('explorer.exe "' .. game:GetService("PathService"):ParsePath(configFolder) .. '"')
+            addConsoleMessage("Opened config folder")
+        end
     end)
 
     -- Function to update config list
@@ -858,16 +939,20 @@ function GUI.Create(Config, ESP, Aimbot)
         end
         
         local yPos = 5
-        for i = 1, 5 do  -- Example: Create 5 dummy configs
+        for _, configName in pairs(getConfigList()) do
             local item = Instance.new("TextButton")
             item.Size = UDim2.new(1, -10, 0, 25)
             item.Position = UDim2.new(0, 5, 0, yPos)
             item.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            item.Text = "Config " .. i
+            item.Text = configName
             item.TextColor3 = Color3.fromRGB(200, 200, 200)
             item.Font = Enum.Font.Gotham
             item.TextSize = 14
             item.Parent = configList
+            
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(0, 4)
+            corner.Parent = item
             
             item.MouseButton1Click:Connect(function()
                 for _, other in pairs(configList:GetChildren()) do
@@ -885,6 +970,48 @@ function GUI.Create(Config, ESP, Aimbot)
 
     -- Initial config list update
     updateConfigList()
+
+    -- Function to update all UI elements
+    function updateAllUI()
+        -- Update all toggles
+        for _, page in pairs(pages) do
+            for _, child in pairs(page:GetDescendants()) do
+                if child:IsA("Frame") and child:FindFirstChild("Content") then
+                    for _, element in pairs(child.Content:GetChildren()) do
+                        -- Update toggles
+                        if element:IsA("Frame") and element:FindFirstChild("TextButton") then
+                            local button = element:FindFirstChild("TextButton")
+                            local indicator = button:FindFirstChild("Frame")
+                            if indicator then
+                                local setting = element.Name
+                                if Config.ESP[setting] ~= nil then
+                                    indicator.BackgroundTransparency = Config.ESP[setting] and 0 or 1
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Add hover effects for all buttons
+    local function addButtonHoverEffect(button)
+        button.MouseEnter:Connect(function()
+            button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        end)
+
+        button.MouseLeave:Connect(function()
+            button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        end)
+    end
+
+    -- Apply hover effects to all buttons
+    for _, button in pairs(ButtonContainer:GetChildren()) do
+        if button:IsA("TextButton") then
+            addButtonHoverEffect(button)
+        end
+    end
 
     print("GUI creation completed")
 end
