@@ -344,39 +344,111 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
                                 lines.healthBar.Color = Color3.fromRGB(0, 255, 0)
                             elseif healthPercent > 0.5 then
                                 lines.healthBar.Color = Color3.fromRGB(255, 255, 0)
+                            elseif healthPercent > 0.25 then
+                                lines.healthBar.Color = Color3.fromRGB(255, 125, 0)
                             else
                                 lines.healthBar.Color = Color3.fromRGB(255, 0, 0)
                             end
                             
                             lines.healthBar.Thickness = 2
                             lines.healthBar.Visible = true
+                            lines.healthBar.ZIndex = 2
                         else
-                            lines.healthBarBackground.Visible = false
                             lines.healthBar.Visible = false
+                            lines.healthBarBackground.Visible = false
                         end
 
                         -- Armor Bar
                         if settings.ShowArmorBar then
-                            -- Implement armor bar logic here if the game has an armor system
-                            -- This is a placeholder as not all games have armor
+                            local armorValue = 0
+                            local maxArmor = 100
+                            
+                            if humanoid:GetAttribute("Armor") then
+                                armorValue = humanoid:GetAttribute("Armor")
+                            elseif humanoid:FindFirstChild("Armor") then
+                                armorValue = humanoid.Armor.Value
+                            elseif plr.Character:FindFirstChild("Armor") then
+                                armorValue = plr.Character.Armor.Value
+                            elseif humanoid:FindFirstChild("Shield") then
+                                armorValue = humanoid.Shield.Value
+                            elseif plr.Character:FindFirstChild("Shield") then
+                                armorValue = plr.Character.Shield.Value
+                            elseif plr:FindFirstChild("Armor") then
+                                armorValue = plr.Armor.Value
+                            elseif plr:FindFirstChild("Shield") then
+                                armorValue = plr.Shield.Value
+                            elseif plr.Character:FindFirstChild("Protection") then
+                                armorValue = plr.Character.Protection.Value
+                            end
+                        
+                            if humanoid:GetAttribute("MaxArmor") then
+                                maxArmor = humanoid:GetAttribute("MaxArmor")
+                            elseif humanoid:FindFirstChild("MaxArmor") then
+                                maxArmor = humanoid.MaxArmor.Value
+                            elseif plr.Character:FindFirstChild("MaxArmor") then
+                                maxArmor = plr.Character.MaxArmor.Value
+                            elseif humanoid:FindFirstChild("MaxShield") then
+                                maxArmor = humanoid.MaxShield.Value
+                            elseif plr.Character:FindFirstChild("MaxShield") then
+                                maxArmor = plr.Character.MaxShield.Value
+                            end
+                        
+                            local armorPercent = armorValue / maxArmor
+                            local barPos = Vector2.new(screenPos.X + size.X + 5, screenPos.Y - size.Y * 1.5)
+                            local barSize = Vector2.new(0, size.Y * 3)
+                        
+                            -- Background bar
+                            lines.armorBarBackground.From = barPos
+                            lines.armorBarBackground.To = barPos + Vector2.new(0, barSize.Y)
+                            lines.armorBarBackground.Color = Color3.fromRGB(25, 25, 25)
+                            lines.armorBarBackground.Thickness = 4
+                            lines.armorBarBackground.Visible = true
+                        
+                            if armorValue > 0 then
+                                local armorBarStart = barPos
+                                local armorBarEnd = barPos + Vector2.new(0, barSize.Y)
+                                local currentHeight = barSize.Y * (1 - armorPercent)
+                                lines.armorBar.From = armorBarStart + Vector2.new(0, currentHeight)
+                                lines.armorBar.To = armorBarEnd
+                                lines.armorBar.Color = settings.ArmorBarColor
+                                lines.armorBar.Thickness = 2
+                                lines.armorBar.Visible = true
+                                lines.armorBar.ZIndex = 2
+                            else
+                                lines.armorBar.Visible = false
+                            end
+                        else
                             lines.armorBar.Visible = false
                             lines.armorBarBackground.Visible = false
+                        end
+
+                        -- Equipped Item
+                        if settings.ShowEquippedItem then
+                            local tool = plr.Character:FindFirstChildOfClass("Tool")
+                            if tool then
+                                lines.itemText.Text = tool.Name
+                                lines.itemText.Position = Vector2.new(screenPos.X, screenPos.Y + size.Y * 1.5)
+                                lines.itemText.Color = settings.EquippedItemColor
+                                lines.itemText.Visible = true
+                            else
+                                lines.itemText.Visible = false
+                            end
+                        else
+                            lines.itemText.Visible = false
                         end
 
                         -- Distance
                         if settings.ShowDistance then
                             local distanceText = string.format("%.1f m", distance)
-                            lines.itemText.Text = distanceText
-                            lines.itemText.Position = Vector2.new(screenPos.X, screenPos.Y + size.Y * 1.5)
+                            lines.itemText.Text = (lines.itemText.Text ~= "" and lines.itemText.Text .. "\n" or "") .. distanceText
+                            lines.itemText.Position = Vector2.new(screenPos.X, screenPos.Y + size.Y * (settings.ShowEquippedItem and 2 or 1.5))
                             lines.itemText.Color = settings.DistanceColor
                             lines.itemText.Visible = true
-                        else
-                            lines.itemText.Visible = false
                         end
 
                         -- Skeleton ESP
                         if settings.ShowSkeleton then
-                            UpdateSkeleton(plr.Character, onScreen)
+                            UpdateSkeleton(plr.Character, true)
                         else
                             for _, line in pairs({
                                 lines.skeletonHead, lines.skeletonSpineUpper, lines.skeletonSpineLower,
@@ -390,6 +462,7 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
                                 line.Visible = false
                             end
                         end
+
                     else
                         for _, drawing in pairs(lines) do
                             drawing.Visible = false
@@ -400,23 +473,28 @@ function ESP.Init(config, workspace, players, runService, userInputService, loca
                         drawing.Visible = false
                     end
                 end
+
+                if not players:FindFirstChild(plr.Name) then
+                    connection:Disconnect()
+                    for _, drawing in pairs(lines) do
+                        drawing:Remove()
+                    end
+                end
             end)
         end
 
-        UpdateESP()
+        coroutine.wrap(UpdateESP)()
     end
 
-    -- Initialize ESP for all players
-    for _, plr in ipairs(players:GetPlayers()) do
-        if plr ~= localPlayer then
-            CreateESP(plr)
+    -- Initialize ESP for existing players
+    for _, v in pairs(players:GetPlayers()) do
+        if v ~= localPlayer then
+            CreateESP(v)
         end
     end
 
-    -- Connect player added event
-    players.PlayerAdded:Connect(function(plr)
-        CreateESP(plr)
-    end)
+    -- Initialize ESP for new players
+    players.PlayerAdded:Connect(CreateESP)
 end
 
 return ESP
