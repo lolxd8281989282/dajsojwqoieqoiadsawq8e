@@ -7,15 +7,15 @@ local coreGui = game:GetService("CoreGui")
 local player = players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- Base URL for direct file access
-local BASE_URL = "https://dracula.lol/lua"
+-- Base URL for GitHub raw content
+local BASE_URL = "https://raw.githubusercontent.com/lolxd8281989282/dajsojwqoieqoiadsawq8e/main/public/lua"
 
 -- Load other modules
 local function loadModule(name)
     if not name then return nil end
     
     local success, content = pcall(function()
-        return game:HttpGet(BASE_URL .. "/" .. name .. ".lua.txt")
+        return game:HttpGet(BASE_URL .. "/" .. name .. ".lua")
     end)
     
     if not success then
